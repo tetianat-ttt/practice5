@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>There is, there are: write it</title>
+<style>
+:root{--bg:#f1f5ff;--card:#fff;--ink:#14213d;--mut:#5d6785;--acc:#5b3df5;--hi:#ffd23f;--ok:#17a673;--bad:#e5484d;--line:#d5ddf5;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12141f;--card:#1c2030;--ink:#eef1ff;--mut:#9aa3c4;--acc:#8f7bff;--line:#303653;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12141f;--card:#1c2030;--ink:#eef1ff;--mut:#9aa3c4;--acc:#8f7bff;--line:#303653;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.4 'Avenir Next','Nunito','Trebuchet MS',system-ui,sans-serif}
+main{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:1.7rem;margin:.2em 0 .5em;letter-spacing:-.02em}h2{margin:.2em 0}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.chip{font:inherit;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;cursor:pointer}
+span.chip{cursor:default}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.card{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:16px;margin:12px 0}
+.hint{color:var(--mut);margin:.4em 0 .8em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+.it{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px;text-align:center;position:relative;font:inherit;color:inherit}
+.it .em{font-size:1.7rem;min-height:2.3rem;line-height:1.2;word-break:break-all}
+.it.off .em{opacity:.22;filter:grayscale(1)}
+.it.off::after{content:"✕";position:absolute;top:4px;right:8px;color:var(--bad);font-weight:700}
+.it .nm{font-size:.9rem;color:var(--mut)}
+.pm{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:4px}
+.pm button{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);background:var(--bg);color:var(--ink);font-size:1.2rem;cursor:pointer}
+button.tile{cursor:pointer}.tile.sel{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc)}
+.q{font-size:1.3rem;font-weight:700;margin:.2em 0 .6em}
+.wrong{font-size:1.3rem;font-weight:700;color:var(--bad);margin:.2em 0 .6em}
+input{font:inherit;width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink)}
+input:focus{outline:3px solid var(--acc);border-color:var(--acc)}
+.go{font:inherit;font-weight:700;background:var(--hi);color:#14213d;border:0;border-radius:12px;padding:12px 18px;cursor:pointer;margin:8px 8px 0 0}
+.log p{margin:.4em 0;padding:8px 12px;border-radius:10px;background:var(--bg);border-left:6px solid var(--line)}
+.log .ok{border-color:var(--ok)}.log .bad{border-color:var(--bad)}.log .false{border-color:var(--hi)}
+.fb{margin:10px 0 0;font-weight:700}
+details{margin-top:16px;color:var(--mut)}
+.bar{height:8px;border-radius:8px;background:var(--line);overflow:hidden;margin:0 0 12px}.bar i{display:block;height:100%;background:var(--acc)}
+</style></head><body><main>
+<h1>There is, there are</h1>
+<div id="ctl"></div><div id="app"></div>
+<details><summary>Need help?</summary>
+<p><b>a / an</b> = one thing. <b>some</b> = more than one, or milk, water, money… <b>any</b> = in questions and after isn’t / aren’t. <b>no</b> = zero.</p></details>
+</main>
+<script>
+const I=(n,e,t,p,a)=>({n,e,t,p,a});
+const T={
+fridge:{t:'Fridge',e:'🧊',items:[I('milk','🥛','u'),I('cheese','🧀','u'),I('juice','🧃','u'),I('butter','🧈','u'),I('egg','🥚','c','eggs',1),I('apple','🍎','c','apples',1),I('banana','🍌','c'),I('tomato','🍅','c','tomatoes'),I('carrot','🥕','c'),I('sausage','🌭','c'),I('orange','🍊','c','oranges',1),I('cake','🍰','c')]},
+bag:{t:'School bag',e:'🎒',items:[I('pen','✏️','c'),I('book','📕','c'),I('phone','📱','c'),I('apple','🍎','c','apples',1),I('sandwich','🥪','c','sandwiches'),I('notebook','📓','c'),I('ruler','📏','c'),I('key','🔑','c'),I('wallet','👛','c'),I('charger','🔌','c'),I('water','💧','u'),I('money','💰','u')]},
+room:{t:'My room',e:'🛋️',items:[I('poster','🖼️','c'),I('lamp','💡','c'),I('chair','🪑','c'),I('plant','🪴','c'),I('mirror','🪞','c'),I('clock','🕰️','c'),I('armchair','🛋️','c','armchairs',1),I('computer','💻','c'),I('guitar','🎸','c'),I('bed','🛏️','c'),I('TV','📺','c','TVs'),I('cat','🐱','c')]}};
+const $=s=>document.querySelector(s);
+const pick=a=>a[Math.random()*a.length|0];
+const shuf=a=>a.map(x=>[Math.random(),x]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
+const pl=i=>i.p||i.n+'s', ar=i=>i.a?'an':'a', low=s=>s.toLowerCase();
+const S={g:'d',sc:'fridge',m:'A'};let G={};
+const items=()=>T[S.sc].items, sc=()=>T[S.sc].t.toLowerCase();
+
+const btn=(k,v,t)=>`<button class="chip ${S[k]==v?'on':''}" onclick="setS('${k}','${v}')">${t}</button>`;
+function setS(k,v){S[k]=v;start()}
+function ctl(){const g=S.g;return `<div class="row">${btn('g','d','✍️ Describe it')}${btn('g','f','🔧 Fix it')}${btn('g','a','🎒 Ask me')}</div>
+<div class="row">${Object.keys(T).map(k=>btn('sc',k,T[k].e+' '+T[k].t)).join('')}</div>
+<div class="row">${btn('m','A',g=='a'?'🕵️ You find it':'👀 Look at the picture')}${btn('m','B',g=='a'?'🎁 You hide it':'🛠 Make your own')}</div>`}
+function start(){$('#ctl').innerHTML=ctl();G={ph:'p',c:{},log:[],i:0,s:0,tries:0,fb:null,done:false,msg:''};
+ if(S.g=='a'){G.h=S.m=='A'?shuf(items()).slice(0,4).map(x=>x.n):[];G.found=[];G.t=0;G.ph=S.m=='A'?'p':'h'}
+ else{items().forEach(x=>G.c[x.n]=S.m=='A'&&Math.random()>.4?1+(Math.random()*3|0):0);
+  if(S.m=='B')G.ph='b';else if(S.g=='f')initF()}
+ render()}
+function render(){$('#app').innerHTML=S.g=='d'?rD():S.g=='f'?rF():rA();const e=$('#inp');if(e)e.focus()}
+
+/* text checking */
+function norm(s){return s.toLowerCase().replace(/[’‘`]/g,"'").replace(/\bthere's\b/g,'there is').replace(/\bisn't\b/g,'is not').replace(/\baren't\b/g,'are not').replace(/[.!?,]/g,' ').replace(/\s+/g,' ').trim().replace(/ (in|on) (the|my|our|this) (fridge|bag|school bag|room|bedroom)$/,'')}
+const find=n=>items().find(x=>low(x.n)==n||low(pl(x))==n);
+const NUM={one:1,'1':1,two:2,'2':2,three:3,'3':3};
+const DETS=['a','an','some','any','no','one','two','three','1','2','3'];
+function judge(raw,C){const s=norm(raw),m=s.match(/^there (is|are)( not)? (.+)$/);
+ const bad=msg=>({st:'bad',msg});
+ if(!m)return bad('Start with: There is… / There are… / There isn’t… / There aren’t…');
+ const be=m[1],neg=!!m[2],w=m[3].split(' ');let det=null;
+ if(DETS.includes(w[0]))det=w.shift();
+ const noun=w.join(' '),it=find(noun);
+ if(!it)return bad(`I can’t find “${noun||'…'}” here. Use a word from the pictures.`);
+ const u=it.t=='u',isPl=!u&&noun==low(pl(it));
+ if(isPl&&be=='is')return bad('More than one thing? Use ARE / AREN’T.');
+ if(!isPl&&be=='are')return bad(!u&&['some','two','three','2','3'].includes(det)?`Many things? Use the plural: ${pl(it)}.`:'One thing, or something like milk? Use IS / ISN’T.');
+ if(!det)return bad('Add a word: a, an, some, any or no.');
+ const one=['a','an','one','1'].includes(det),many=['some','two','three','2','3'].includes(det);
+ if(u&&(one||NUM[det]))return bad(`${it.n} is not countable. Use some / any, not “${det}”.`);
+ if(one&&isPl)return bad('a / an / one = ONE thing. For many things use some or a number.');
+ if(many&&!u&&!isPl)return bad(`Many things? Use the plural: ${pl(it)}.`);
+ if((det=='a'||det=='an')&&det!=ar(it))return bad(`Say “${ar(it)} ${it.n}”.`);
+ if(neg&&det=='no')return bad('Double negative! Say “isn’t any…” or “There is no…”.');
+ if(neg&&det=='some')return bad('After isn’t / aren’t use ANY, not some.');
+ if(!neg&&det=='any')return bad('any is for questions and after isn’t. Use some.');
+ if(neg&&det=='any'&&!u&&!isPl)return bad(`any + many things: use the plural (${pl(it)}).`);
+ const n=C[it.n];
+ if(neg||det=='no')return n==0?{st:'ok',cat:'neg',item:it}:{st:'false',msg:'The grammar is right, but this is in the picture!',item:it};
+ const t=one?n==1:det=='some'?(u?n>0:n>1):n==NUM[det];
+ return t?{st:'ok',cat:one?'one':'some',item:it}:{st:'false',msg:n==0?'The grammar is right, but it is not in the picture.':'The grammar is right, but count again!',item:it}}
+function model(i,n){const a=ar(i),P=pl(i),u=i.t=='u';
+ return n==0?(u?`There isn’t any ${i.n}.`:`There aren’t any ${P}.`):u?`There is some ${i.n}.`:n==1?`There is ${a} ${i.n}.`:`There are some ${P}.`}
+
+/* scene */
+function grid(e){return `<div class="grid">${items().map((x,k)=>{const n=G.c[x.n];
+ return `<div class="it ${n?'':'off'}"><div class="em">${n?x.e.repeat(n):x.e}</div><div class="nm">${x.n}</div>${e?`<div class="pm"><button onclick="pm(${k},-1)">−</button><b>${n}</b><button onclick="pm(${k},1)">+</button></div>`:''}</div>`}).join('')}</div>`}
+const vocab=()=>`<div class="grid">${items().map(x=>`<div class="it"><div class="em">${x.e}</div><div class="nm">${x.n}</div></div>`).join('')}</div>`;
+function pm(k,d){const x=items()[k];G.c[x.n]=Math.max(0,Math.min(3,G.c[x.n]+d));render()}
+function rB(){return `<div class="card"><p class="hint">Fill your ${sc()} with + and −. Then tell your teacher what is in it.</p>${grid(true)}<p class="fb" style="color:var(--bad)">${G.msg}</p><button class="go" onclick="goB()">Start</button></div>`}
+function goB(){if(Object.values(G.c).filter(v=>v>0).length<2){G.msg='Put at least 2 things in first.';render();return}
+ G.msg='';G.ph='p';if(S.g=='f')initF();render()}
+const field=(fn,ph)=>`<form onsubmit="return ${fn}()"><input id="inp" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${ph}"><button class="go">Check</button></form>`;
+const val=()=>{const e=$('#inp');return e?e.value.trim():''};
+
+/* describe it */
+function rD(){if(G.ph=='b')return rB();
+ const ok=G.log.filter(l=>l.st=='ok'),cats=new Set(ok.map(l=>l.cat)),done=ok.length>=6&&cats.size==3;
+ return grid(false)+`<div class="card"><p class="hint">Write sentences about the picture. Goal: 6 correct sentences, with all 3 kinds.</p>
+ <div class="row"><span class="chip ${cats.has('one')?'on':''}">a / an</span><span class="chip ${cats.has('some')?'on':''}">some</span><span class="chip ${cats.has('neg')?'on':''}">isn’t / aren’t / no</span><span class="chip">${Math.min(ok.length,6)} / 6</span></div>
+ ${done?`<h2>🎉 Done!</h2><button class="go" onclick="start()">Play again</button>`:field('subD','There is…')}
+ <div class="log">${G.log.slice().reverse().map(l=>`<p class="${l.st}">${l.st=='ok'?'✔':l.st=='false'?'🤔':'✘'} ${l.t}${l.msg?'<br><small>'+l.msg+'</small>':''}</p>`).join('')}</div></div>`}
+function subD(){const v=val();if(!v)return false;const k=norm(v);
+ if(G.log.some(l=>l.st=='ok'&&l.k==k))G.log.push({t:v,st:'bad',msg:'You wrote this already. Write a new sentence.',k});
+ else G.log.push({t:v,k,...judge(v,G.c)});
+ render();return false}
+
+/* fix it */
+function wrongOf(x,n){const a=ar(x),o=a=='a'?'an':'a',P=pl(x),u=x.t=='u';let c;
+ if(n==0)c=u?[`There is some ${x.n}.`,`There isn’t no ${x.n}.`,`There isn’t some ${x.n}.`,`There isn’t a ${x.n}.`]:[`There is ${a} ${x.n}.`,`There are some ${P}.`,`There aren’t some ${P}.`,`There isn’t no ${P}.`,`There aren’t a ${P}.`];
+ else if(u)c=[`There is a ${x.n}.`,`There are some ${x.n}.`,`There is any ${x.n}.`,`There isn’t any ${x.n}.`];
+ else if(n==1)c=[`There is some ${x.n}.`,`There is ${o} ${x.n}.`,`There are ${a} ${x.n}.`,`There are some ${P}.`,`There isn’t any ${P}.`];
+ else c=[`There is some ${P}.`,`There are some ${x.n}.`,`There are ${a} ${P}.`,`There is ${a} ${x.n}.`,`There aren’t any ${P}.`];
+ return pick(shuf(c).filter(s=>judge(s,G.c).st!='ok'))}
+function initF(){G.q=shuf(items()).slice(0,8).map(x=>({x,w:wrongOf(x,G.c[x.n])}));G.i=0;G.s=0;G.tries=0;G.fb=null;G.done=false}
+function rF(){if(G.ph=='b')return rB();
+ if(G.i>=G.q.length)return `<div class="card"><h2>${G.s} / ${G.q.length}</h2><p>${G.s>=7?'Great job!':'Good try. Look at the picture and play again.'}</p><button class="go" onclick="start()">Play again</button></div>`;
+ const q=G.q[G.i];
+ return `<div class="bar"><i style="width:${G.i/G.q.length*100}%"></i></div>${grid(false)}<div class="card"><p class="hint">This sentence is wrong. Write the correct sentence.</p><div class="wrong">${q.w}</div>
+ ${G.done?'':field('subF','Write it correctly…')}
+ ${G.fb?`<p class="fb" style="color:var(--${G.fb.ok?'ok':'bad'})">${G.fb.t}</p>`:''}
+ ${G.done?`<button class="go" onclick="nextF()">Next</button>`:''}</div>`}
+function subF(){const v=val();if(!v)return false;const q=G.q[G.i],r=judge(v,G.c);
+ if(r.st=='ok'&&r.item.n==q.x.n){if(G.tries==0)G.s++;G.fb={ok:1,t:'✔ Yes!'};G.done=true}
+ else{G.tries++;const m=r.st=='ok'?`Write about “${q.x.n}”.`:r.msg;
+  if(G.tries>=2){G.fb={t:`✘ Correct sentence: ${model(q.x,G.c[q.x.n])}`};G.done=true}else G.fb={t:`✘ ${m} Try again.`}}
+ render();return false}
+function nextF(){G.i++;G.tries=0;G.fb=null;G.done=false;render()}
+
+/* ask me */
+const qq=i=>i.t=='u'?`Is there any ${i.n}?`:`Is there ${ar(i)} ${i.n}?`;
+const full=(i,y)=>y?(i.t=='u'?`Yes, there is some ${i.n}.`:`Yes, there is ${ar(i)} ${i.n}.`):(i.t=='u'?`No, there isn’t any ${i.n}.`:`No, there isn’t ${ar(i)} ${i.n}.`);
+function parseQ(raw){const s=norm(raw),m=s.match(/^(is|are) there (?:(a|an|some|any) )?(.+)$/),e=err=>({err});
+ if(!m)return e('Ask like this: Is there…? or Are there…?');
+ const be=m[1],det=m[2],noun=m[3],it=find(noun);
+ if(!it)return e(`I can’t find “${noun}” here. Use a word from the pictures.`);
+ const u=it.t=='u',isPl=!u&&noun==low(pl(it));
+ if(isPl&&be=='is')return e('More than one thing? Use ARE.');
+ if(!isPl&&be=='are')return e('One thing, or something like milk? Use IS.');
+ if(!det)return e('Add a word before the thing: a, an or any.');
+ if(det=='some')return e('In questions we use ANY, not some.');
+ if(u&&det!='any')return e(`${it.n} is not countable. Use any.`);
+ if(isPl&&det!='any')return e('a / an = ONE thing. For many things use any.');
+ if(!u&&!isPl&&det=='any')return e('For one thing use a / an.');
+ if(!u&&!isPl&&det!=ar(it))return e(`Say “${ar(it)} ${it.n}”.`);
+ return {item:it}}
+function expect(x,y){const a=ar(x),P=pl(x);return y?[x.t=='u'?`yes there is some ${x.n}`:`yes there is ${a} ${x.n}`]:x.t=='u'?[`no there is not any ${x.n}`,`no there is no ${x.n}`]:[`no there is not ${a} ${x.n}`,`no there is not any ${P}`,`no there is no ${x.n}`,`no there is no ${P}`]}
+function rA(){
+ if(G.ph=='h')return `<p class="hint">Choose 4 things to hide in your ${sc()}. Chosen: <b>${G.h.length} / 4</b></p><div class="grid">${items().map(x=>`<button class="it tile ${G.h.includes(x.n)?'sel':''}" onclick="hide('${x.n}')"><div class="em">${x.e}</div><div class="nm">${x.n}</div></button>`).join('')}</div>${G.h.length==4?`<button class="go" onclick="goH()">Hide them and start</button>`:''}`;
+ if(G.ph=='p'){if(G.found.length==4)return `<div class="card"><h2>🎉 You found all 4!</h2><p>${G.t} questions. Can you do it in fewer?</p><button class="go" onclick="start()">Play again</button></div>`;
+  return vocab()+`<div class="card"><p class="hint">4 things are hidden in the ${sc()}. Ask me questions to find them. Found: <b>${G.found.length} / 4</b></p>${field('subA','Is there…?')}
+  ${G.msg?`<p class="fb" style="color:var(--bad)">✘ ${G.msg}</p>`:''}<div class="log">${G.log.slice().reverse().map(l=>`<p class="${l.y?'ok':''}">🗣 ${l.q}<br>💬 ${l.a}</p>`).join('')}</div></div>`}
+ if(G.i>=G.q.length)return `<div class="card"><h2>${G.s} / ${G.q.length}</h2><p>${G.s>=7?'Great job!':'Good try. Play again.'}</p><button class="go" onclick="start()">Play again</button></div>`;
+ const x=G.q[G.i];
+ return `<div class="bar"><i style="width:${G.i/G.q.length*100}%"></i></div><div class="card"><div class="em" style="font-size:3rem">${x.e}</div><div class="q">${qq(x)}</div><p class="hint">Answer with a full sentence about your ${sc()}.</p>
+ ${G.done?'':field('subAB','Yes, there… / No, there…')}${G.fb?`<p class="fb" style="color:var(--${G.fb.ok?'ok':'bad'})">${G.fb.t}</p>`:''}${G.done?`<button class="go" onclick="nextA()">Next</button>`:''}</div>`}
+function hide(n){const k=G.h.indexOf(n);if(k>=0)G.h.splice(k,1);else if(G.h.length<4)G.h.push(n);render()}
+function goH(){G.q=shuf(items()).slice(0,8);G.ph='a';G.i=0;G.s=0;G.tries=0;G.fb=null;G.done=false;render()}
+function subA(){const v=val();if(!v)return false;const r=parseQ(v);
+ if(r.err){G.msg=r.err;render();return false}
+ const y=G.h.includes(r.item.n);G.msg='';G.t++;G.log.push({q:v,a:full(r.item,y),y});
+ if(y&&!G.found.includes(r.item.n))G.found.push(r.item.n);render();return false}
+function subAB(){const v=val();if(!v)return false;const x=G.q[G.i],y=G.h.includes(x.n),k=norm(v);
+ if(expect(x,y).includes(k)){if(G.tries==0)G.s++;G.fb={ok:1,t:'✔ Yes!'};G.done=true}
+ else{G.tries++;if(G.tries>=2){G.fb={t:`✘ Correct answer: ${full(x,y)}`};G.done=true}else G.fb={t:`✘ Not quite. Look: ${y?'Yes':'No'}, there ${y?'is':'isn’t'} … ${y?'':'(a / any)'} Try again.`}}
+ render();return false}
+function nextA(){G.i++;G.tries=0;G.fb=null;G.done=false;render()}
+start();
+</script></body></html>
